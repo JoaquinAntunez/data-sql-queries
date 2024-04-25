@@ -16,8 +16,8 @@ def late_released_movies(db):
     '''return the list of all movies released after their director death'''
     query = '''
         SELECT movies.title
-        FROM movies
-        JOIN directors ON director_id = directors.id
+        FROM directors
+        JOIN movies ON directors.id = movies.director_id
         WHERE (movies.start_year - directors.death_year) > 0
         ORDER BY movies.title
         '''
@@ -35,21 +35,22 @@ def stats_on(db, genre_name):
         WHERE genres = ?
     '''
     db.execute(query, (genre_name,))
-    genre_stats = db.fetchone()
+    stat = db.fetchone()
+    print(stat)
     return {
-        'genre': genre_stats[0],
-        'count': genre_stats[1],
-        'avg_duration': genre_stats[2]
+        'genre': stat[0],
+        'number_of_movies': stat[1],
+        'avg_length': stat[2]
     }
 
 
 def top_five_directors_for(db, genre_name):
     '''return the top 5 of the directors with the most movies for a given genre'''
     query = '''
-        SELECT directors.name, COUNT(*) AS movie_count
+        SELECT directors.name, COUNT(*) movie_count
         FROM movies
         JOIN directors ON movies.director_id = directors.id
-        WHERE movies.genre = ? 
+        WHERE movies.genres = ?
         GROUP BY directors.name
         ORDER BY movie_count DESC, directors.name
         LIMIT 5
@@ -61,9 +62,26 @@ def top_five_directors_for(db, genre_name):
 
 def movie_duration_buckets(db):
     '''return the movie counts grouped by bucket of 30 min duration'''
-    pass  # YOUR CODE HERE
+    query = '''
+        SELECT (minutes / 30 + 1)*30 AS time_range, COUNT(*)
+        FROM movies
+        WHERE minutes IS NOT NULL
+        GROUP BY time_range
+    '''
+    return db.execute(query).fetchall()
 
 
 def top_five_youngest_newly_directors(db):
     '''return the top 5 youngest directors when they direct their first movie'''
-    pass  # YOUR CODE HERE
+    query = '''
+        SELECT directors.name, movies.start_year - directors.birth_year AS age
+        FROM directors
+        JOIN movies ON directors.id = movies.director_id
+        GROUP BY directors.name
+        HAVING age IS NOT NULL
+        ORDER BY age
+        LIMIT 5
+    '''
+    db.execute(query)
+    directors = db.fetchall()
+    return directors
