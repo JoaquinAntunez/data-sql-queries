@@ -55,7 +55,7 @@ def top_five_directors_for(db, genre_name):
         ORDER BY movie_count DESC, directors.name
         LIMIT 5
     '''
-    db.execute(query, (genre_name))
+    db.execute(query, (genre_name,))
     directors = db.fetchall()
     return directors
 
